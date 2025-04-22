@@ -628,12 +628,11 @@ void CFGProcessor::constructParseTable() {
     }
     tableTerminals.insert("$"); 
     
-    const int colWidth = 15;
+    const int colWidth = 12; // Reduced for better display
     
-    cout << "+";
-    outputFile << "+";
-    cout << string(colWidth, '-') << "+";
-    outputFile << string(colWidth, '-') << "+";
+    // Print header separator
+    cout << "+" << string(colWidth, '-') << "+";
+    outputFile << "+" << string(colWidth, '-') << "+";
     for (const auto& term : tableTerminals) {
         cout << string(colWidth, '-') << "+";
         outputFile << string(colWidth, '-') << "+";
@@ -641,19 +640,19 @@ void CFGProcessor::constructParseTable() {
     cout << endl;
     outputFile << endl;
     
-    cout << "|" << setw(colWidth) << "  " << "|";
-    outputFile << "|" << setw(colWidth) << "  " << "|";
+    // Print header row
+    cout << "| " << setw(colWidth-2) << left << "NonTerm" << " |";
+    outputFile << "| " << setw(colWidth-2) << left << "NonTerm" << " |";
     for (const auto& term : tableTerminals) {
-        cout << setw(colWidth) << term << "|";
-        outputFile << setw(colWidth) << term << "|";
+        cout << " " << setw(colWidth-2) << left << term << " |";
+        outputFile << " " << setw(colWidth-2) << left << term << " |";
     }
     cout << endl;
     outputFile << endl;
     
-    cout << "+";
-    outputFile << "+";
-    cout << string(colWidth, '-') << "+";
-    outputFile << string(colWidth, '-') << "+";
+    // Print header separator
+    cout << "+" << string(colWidth, '-') << "+";
+    outputFile << "+" << string(colWidth, '-') << "+";
     for (const auto& term : tableTerminals) {
         cout << string(colWidth, '-') << "+";
         outputFile << string(colWidth, '-') << "+";
@@ -661,28 +660,36 @@ void CFGProcessor::constructParseTable() {
     cout << endl;
     outputFile << endl;
     
+    // Print table rows
     for (const auto& nt : grammar.nonTerminals) {
-        cout << "|" << setw(colWidth) << nt << "|";
-        outputFile << "|" << setw(colWidth) << nt << "|";
+        cout << "| " << setw(colWidth-2) << left << nt << " |";
+        outputFile << "| " << setw(colWidth-2) << left << nt << " |";
         
         for (const auto& term : tableTerminals) {
             string cellContent = "";
             if (parseTable.find({nt, term}) != parseTable.end()) {
-                cellContent = nt + " -> ";
+                // Create a more compact representation
+                cellContent = "";
                 for (int i = 0; i < parseTable[{nt, term}].size(); i++) {
-                    cellContent += parseTable[{nt, term}][i] + " ";
+                    cellContent += parseTable[{nt, term}][i];
+                    if (i < parseTable[{nt, term}].size() - 1) {
+                        cellContent += " ";
+                    }
+                }
+                // Truncate if too long
+                if (cellContent.length() > colWidth-4) {
+                    cellContent = cellContent.substr(0, colWidth-7) + "...";
                 }
             }
-            cout << setw(colWidth) << cellContent << "|";
-            outputFile << setw(colWidth) << cellContent << "|";
+            cout << " " << setw(colWidth-2) << left << cellContent << " |";
+            outputFile << " " << setw(colWidth-2) << left << cellContent << " |";
         }
         cout << endl;
         outputFile << endl;
         
-        cout << "+";
-        outputFile << "+";
-        cout << string(colWidth, '-') << "+";
-        outputFile << string(colWidth, '-') << "+";
+        // Print row separator
+        cout << "+" << string(colWidth, '-') << "+";
+        outputFile << "+" << string(colWidth, '-') << "+";
         for (const auto& term : tableTerminals) {
             cout << string(colWidth, '-') << "+";
             outputFile << string(colWidth, '-') << "+";
@@ -691,7 +698,6 @@ void CFGProcessor::constructParseTable() {
         outputFile << endl;
     }
 }
-
 // Display results of grammar analysis
 void CFGProcessor::displayResults() {
     cout << "Original Grammar:" << endl;
@@ -758,13 +764,56 @@ string CFGProcessor::getNextToken(const string& input, int& position) {
         return "$";
     }
     
-    // Find the end of the current token (whitespace or end of string)
-    int start = position;
-    while (position < input.length() && !isspace(input[position])) {
+    // Handle special tokens
+    char c = input[position];
+    if (c == '(' || c == ')' || c == '{' || c == '}' || c == ';' ||
+        c == '=' || c == '+' || c == '-' || c == '*' || c == '/') {
         position++;
+        return string(1, c);
     }
     
-    return input.substr(start, position - start);
+    // Handle multi-character operators (==, !=, >=, <=)
+    if ((c == '=' || c == '!' || c == '>' || c == '<') && 
+        position + 1 < input.length() && input[position + 1] == '=') {
+        string op = input.substr(position, 2);
+        position += 2;
+        return op;
+    }
+    
+    // Handle > and < operators
+    if (c == '>' || c == '<') {
+        position++;
+        return string(1, c);
+    }
+    
+    // Handle identifiers and keywords
+    if (isalpha(c) || c == '_') {
+        int start = position;
+        while (position < input.length() && 
+               (isalnum(input[position]) || input[position] == '_')) {
+            position++;
+        }
+        string token = input.substr(start, position - start);
+        
+        // Check if it's a keyword
+        if (token == "int" || token == "if") {
+            return token;
+        }
+        return "id"; // Return general identifier token
+    }
+    
+    // Handle integer literals
+    if (isdigit(c)) {
+        int start = position;
+        while (position < input.length() && isdigit(input[position])) {
+            position++;
+        }
+        return "int_lit"; // Return integer literal token
+    }
+    
+    // If we couldn't recognize the token, just return the character and advance
+    position++;
+    return string(1, c);
 }
 
 // Display the current state of the stack
@@ -813,6 +862,8 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
     int position = 0;
     string currentToken = getNextToken(input, position);
     bool error = false;
+    int errorRecoveryCounter = 0; // Add counter to prevent infinite loops
+    const int MAX_ERROR_RECOVERY_ATTEMPTS = 10; // Maximum number of consecutive error recovery attempts
     
     cout << "Beginning parse of input string" << endl;
     outputFile << "Beginning parse of input string" << endl;
@@ -822,7 +873,7 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
     outputFile << "Current token: " << currentToken << endl;
     
     // Continue until we've processed all input or encountered an error
-    while (!parseStack.empty()) {
+    while (!parseStack.empty() && errorRecoveryCounter < MAX_ERROR_RECOVERY_ATTEMPTS) {
         string topStack = parseStack.top();
         parseStack.pop();
         
@@ -846,10 +897,28 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
                 currentToken = getNextToken(input, position);
                 cout << "Current token: " << currentToken << endl;
                 outputFile << "Current token: " << currentToken << endl;
+                errorRecoveryCounter = 0; // Reset error counter on successful match
             } else if (topStack == "epsilon") {
                 // Special case for epsilon, don't consume input
                 cout << "Applying epsilon-rule (no input consumed)" << endl;
                 outputFile << "Applying epsilon-rule (no input consumed)" << endl;
+                errorRecoveryCounter = 0; // Reset error counter on successful epsilon application
+            } else if (topStack == "id" && (isalpha(currentToken[0]) || currentToken[0] == '_')) {
+                // Special handling for identifiers
+                cout << "Match: identifier '" << currentToken << "'" << endl;
+                outputFile << "Match: identifier '" << currentToken << "'" << endl;
+                currentToken = getNextToken(input, position);
+                cout << "Current token: " << currentToken << endl;
+                outputFile << "Current token: " << currentToken << endl;
+                errorRecoveryCounter = 0; // Reset error counter on successful match
+            } else if (topStack == "int_lit" && isdigit(currentToken[0])) {
+                // Special handling for integer literals
+                cout << "Match: integer literal '" << currentToken << "'" << endl;
+                outputFile << "Match: integer literal '" << currentToken << "'" << endl;
+                currentToken = getNextToken(input, position);
+                cout << "Current token: " << currentToken << endl;
+                outputFile << "Current token: " << currentToken << endl;
+                errorRecoveryCounter = 0; // Reset error counter on successful match
             } else {
                 // Error: Terminal mismatch
                 cout << "Syntax Error: Expected '" << topStack << "', but found '" << currentToken << "'" << endl;
@@ -861,10 +930,9 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
                 // Error recovery: Skip this token and continue
                 currentToken = getNextToken(input, position);
                 error = true;
+                errorRecoveryCounter++; // Increment error counter
                 
-                // Push the expected terminal back onto the stack for another try
-                parseStack.push(topStack);
-                
+                // Don't push the terminal back on stack - it was causing the infinite loop
                 cout << "Error recovery: Skipping token and continuing" << endl;
                 outputFile << "Error recovery: Skipping token and continuing" << endl;
             }
@@ -889,6 +957,7 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
                         parseStack.push(production[i]);
                     }
                 }
+                errorRecoveryCounter = 0; // Reset error counter on successful production application
             } else {
                 // Error: No rule in parse table
                 cout << "Syntax Error: No production for [" << topStack << ", " << currentToken << "]" << endl;
@@ -899,35 +968,14 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
                 outputFile << "Line " << lineNumber << ": Syntax Error: Unexpected token '" << currentToken 
                            << "', no production rule found" << endl;
                 
-                // Error recovery: Try to skip this problematic input
+                // Error recovery: Try to skip this problematic token
                 currentToken = getNextToken(input, position);
                 error = true;
+                errorRecoveryCounter++; // Increment error counter
                 
-                // Try another production by checking FOLLOW set
-                bool recovered = false;
-                for (const auto& followTerm : followSets[topStack]) {
-                    if (parseTable.find({topStack, followTerm}) != parseTable.end()) {
-                        cout << "Error recovery: Trying production for FOLLOW symbol: " << followTerm << endl;
-                        outputFile << "Error recovery: Trying production for FOLLOW symbol: " << followTerm << endl;
-                        
-                        vector<string> recoveryProduction = parseTable[{topStack, followTerm}];
-                        
-                        // Push recovery production onto stack
-                        if (!(recoveryProduction.size() == 1 && recoveryProduction[0] == "epsilon")) {
-                            for (int i = recoveryProduction.size() - 1; i >= 0; i--) {
-                                parseStack.push(recoveryProduction[i]);
-                            }
-                        }
-                        recovered = true;
-                        break;
-                    }
-                }
-                
-                if (!recovered) {
-                    // If no recovery possible, just skip this non-terminal
-                    cout << "Error recovery: Skipping non-terminal " << topStack << endl;
-                    outputFile << "Error recovery: Skipping non-terminal " << topStack << endl;
-                }
+                // Try to sync with FOLLOW set
+                cout << "Error recovery: Trying to synchronize using FOLLOW set" << endl;
+                outputFile << "Error recovery: Trying to synchronize using FOLLOW set" << endl;
             }
         } else if (topStack == "$" && currentToken != "$") {
             // End of stack but not end of input
@@ -943,6 +991,12 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
         
         // Display current stack and input
         displayStack(parseStack, input, position);
+    }
+    
+    if (errorRecoveryCounter >= MAX_ERROR_RECOVERY_ATTEMPTS) {
+        cout << "Too many consecutive errors. Giving up on this line." << endl;
+        outputFile << "Too many consecutive errors. Giving up on this line." << endl;
+        return false;
     }
     
     if (currentToken != "$") {

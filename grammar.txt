@@ -1,0 +1,11 @@
+PROGRAM -> STMT_LIST
+STMT_LIST -> STMT STMT_LIST | epsilon
+STMT -> DECL | ASSIGN | IF_STMT
+DECL -> int id ;
+ASSIGN -> id = EXPR ;
+EXPR -> TERM EXPR_TAIL
+EXPR_TAIL -> + TERM EXPR_TAIL | - TERM EXPR_TAIL | epsilon
+TERM -> id | int_lit | ( EXPR )
+IF_STMT -> if ( COND ) { STMT_LIST }
+COND -> EXPR REL_OP EXPR
+REL_OP -> > | < | == | != | >= | <=

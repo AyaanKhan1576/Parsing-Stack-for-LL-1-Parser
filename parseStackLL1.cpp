@@ -212,22 +212,42 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
         string topStack = parseStack.top();
 
         // If the top of the stack matches the current input token (or $)
+        // if (topStack == currentToken) {
+        //      // Handle stack pop and token advance for match
+        //      if (topStack == "$") {
+        //          cout << "Parse successful!" << endl;
+        //          if (outputFile.is_open()) outputFile << "Parse successful!" << endl;
+        //          parseStack.pop(); // Pop $
+        //          return true; // Successful parse
+        //      }
+
+        //     cout << "Match and Pop: " << topStack << endl;
+        //     if (outputFile.is_open()) outputFile << "Match and Pop: " << topStack << endl;
+        //     parseStack.pop();
+        //     currentToken = getNextToken(input, position);
+        //     cout << "Next token: " << currentToken << endl;
+        //     if (outputFile.is_open()) outputFile << "Next token: " << currentToken << endl;
+        //     errorRecoveryCounter = 0; // Reset error counter on successful match
+        // }
+                // If the top of the stack matches the current input token (or $)
         if (topStack == currentToken) {
              // Handle stack pop and token advance for match
              if (topStack == "$") {
-                 cout << "Parse successful!" << endl;
-                 if (outputFile.is_open()) outputFile << "Parse successful!" << endl;
+                 cout << "Processing complete for the line." << endl; // Changed message slightly
+                 if (outputFile.is_open()) outputFile << "Processing complete for the line." << endl;
                  parseStack.pop(); // Pop $
-                 return true; // Successful parse
+                 // **** REMOVED: return true; ****  Let the loop finish naturally
+                 // Now the final check after the loop and 'return !error' will handle the outcome.
              }
-
-            cout << "Match and Pop: " << topStack << endl;
-            if (outputFile.is_open()) outputFile << "Match and Pop: " << topStack << endl;
-            parseStack.pop();
-            currentToken = getNextToken(input, position);
-            cout << "Next token: " << currentToken << endl;
-            if (outputFile.is_open()) outputFile << "Next token: " << currentToken << endl;
-            errorRecoveryCounter = 0; // Reset error counter on successful match
+             else { // Added else block for clarity
+                cout << "Match and Pop: " << topStack << endl;
+                if (outputFile.is_open()) outputFile << "Match and Pop: " << topStack << endl;
+                parseStack.pop();
+                currentToken = getNextToken(input, position);
+                cout << "Next token: " << currentToken << endl;
+                if (outputFile.is_open()) outputFile << "Next token: " << currentToken << endl;
+                errorRecoveryCounter = 0; // Reset error counter on successful match
+             }
         }
         // If the top of stack is a terminal but doesn't match current token
         else if (isTerminal(topStack)) {
@@ -306,27 +326,65 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
          }
     } // end while loop
 
-    if (errorRecoveryCounter >= MAX_ERROR_RECOVERY_ATTEMPTS) {
-        cout << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
-        if (outputFile.is_open()) outputFile << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
-        return false;
-    }
+//     if (errorRecoveryCounter >= MAX_ERROR_RECOVERY_ATTEMPTS) {
+//         cout << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
+//         if (outputFile.is_open()) outputFile << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
+//         return false;
+//     }
 
-    // Final check: Should be $ on stack and $ in input if successful
-    if (parseStack.empty() && currentToken == "$") {
-        // This case is handled inside the loop now for immediate success reporting
-         return true; // Should have returned true already
-    } else if (!error) {
-        // If no error was flagged but we exit the loop not in success state
-         cout << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
-              << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
-          if (outputFile.is_open()) outputFile << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
-              << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
-         return false;
-    }
+//     // Final check: Should be $ on stack and $ in input if successful
+//     if (parseStack.empty() && currentToken == "$") {
+//         // This case is handled inside the loop now for immediate success reporting
+//          return true; // Should have returned true already
+//     } else if (!error) {
+//         // If no error was flagged but we exit the loop not in success state
+//          cout << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
+//               << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
+//           if (outputFile.is_open()) outputFile << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
+//               << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
+//          return false;
+//     }
 
 
-    return !error; // Return true if no errors were ultimately flagged (or handled)
+//     return !error; // Return true if no errors were ultimately flagged (or handled)
+// }
+
+        if (errorRecoveryCounter >= MAX_ERROR_RECOVERY_ATTEMPTS) {
+            cout << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
+            if (outputFile.is_open()) outputFile << "Too many consecutive errors. Giving up on line " << lineNumber << "." << endl;
+            // Ensure error is flagged if we give up
+            error = true; // Make sure error is true if we hit the limit
+            // return false; // This return is now handled by the final 'return !error'
+        }
+
+        // Final check: Should be $ on stack and $ in input if successful AND no error occurred
+        if (parseStack.empty() && currentToken == "$" && !error) {
+            // If we reached the end successfully without any prior errors flagged
+            cout << "Parse successful!" << endl;
+            if (outputFile.is_open()) outputFile << "Parse successful!" << endl;
+            // return true; // Let the final return handle it
+        } else if (parseStack.empty() && currentToken == "$" && error) {
+            // Reached end state but errors occurred during recovery
+            cout << "Parse failed due to syntax errors detected on line " << lineNumber << "." << endl;
+            if (outputFile.is_open()) outputFile << "Parse failed due to syntax errors detected on line " << lineNumber << "." << endl;
+            // return false; // Let the final return handle it
+        } else if (!error) {
+            // If no error was flagged but we exit the loop not in success state (should ideally not happen with correct logic/recovery)
+            cout << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
+                << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
+            if (outputFile.is_open()) outputFile << "Parse Error (Line " << lineNumber << "): Parsing ended unexpectedly. Stack top: "
+                << (parseStack.empty() ? "empty" : parseStack.top()) << ", Input token: " << currentToken << endl;
+            error = true; // Flag this unexpected end as an error
+            // return false; // Let the final return handle it
+        } else {
+            // If errors occurred and we didn't reach the clean end state
+            cout << "Parse failed due to syntax errors detected on line " << lineNumber << "." << endl;
+            if (outputFile.is_open()) outputFile << "Parse failed due to syntax errors detected on line " << lineNumber << "." << endl;
+            // The error flag is already true
+        }
+
+
+        return !error; // Return true ONLY if no errors were flagged during the entire process
 }
 
 // --- Main Function (Modified for Assignment 3) ---

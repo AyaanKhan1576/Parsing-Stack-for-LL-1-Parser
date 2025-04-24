@@ -110,9 +110,9 @@ string CFGProcessor::getNextToken(const string& input, int& position) {
          if (grammar.terminals.count(token)) { // Check if the token is a terminal (keyword)
             return token;
          }
-        // if (token == "int" || token == "if") {
-        //     return token;
-        // }
+        if (token == "int" || token == "if") {
+            return token;
+        }
         return "id"; // Return general identifier token if not a keyword terminal
     }
 

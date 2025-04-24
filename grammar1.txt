@@ -1,8 +1,0 @@
-Program -> Statement Program | epsilon
-Statement -> Declaration | Expression ;
-Declaration -> int id = Expression ; | int id ;
-Expression -> T E'
-E' -> + T E' | epsilon                
-T -> F T'
-T' -> * F T' | epsilon
-F -> id | ( Expression ) | int_lit

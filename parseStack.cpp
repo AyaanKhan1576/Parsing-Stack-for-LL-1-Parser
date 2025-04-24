@@ -8,13 +8,17 @@
 #include <algorithm>
 #include <iomanip>
 #include <stack>
+
 #include "sourceCFG.h"
+
 using namespace std;
 
+/* -----------------------------------------------------------------
+   ───────  Pretty-printing helpers (unchanged from last version) ───────
+------------------------------------------------------------------*/
 static constexpr int COL_W = 40;
 static constexpr int ACT_W = 30;
 
-//Print Table Headers
 void CFGProcessor::printTableHeader()
 {
     const string sep = "+" + string(COL_W, '-') + "+" +
@@ -33,7 +37,6 @@ void CFGProcessor::printTableHeader()
     if (outputFile.is_open()) hdr(outputFile);
 }
 
-//Display Stack
 void CFGProcessor::displayStack(stack<string> s,
                                 const string& input,
                                 int position,
@@ -66,7 +69,10 @@ void CFGProcessor::displayStack(stack<string> s,
     if (outputFile.is_open()) row(outputFile);
 }
 
-//File Parsing
+/* -----------------------------------------------------------------
+   ───────  File-level driver (changed!)  ───────
+------------------------------------------------------------------*/
+
 void CFGProcessor::parseInputFile(const string& inputFilename)
 {
     ifstream fin(inputFilename);
@@ -88,7 +94,7 @@ void CFGProcessor::parseInputFile(const string& inputFilename)
         lineNo++;
         if (line.empty() || line[0] == '#') continue;
 
-        // Heading & original source line 
+        /* ——— Heading & original source line ——— */
         cout << "──────── Line " << lineNo << " ────────\n"
              << "Code  : " << line << "\n";
         if (outputFile.is_open()) {
@@ -98,6 +104,7 @@ void CFGProcessor::parseInputFile(const string& inputFilename)
 
         bool ok = parseString(line, lineNo);
 
+        /* ——— per-line result ——— */
         if (ok) {
             cout << "Result: Line " << lineNo << " parsed successfully.\n\n";
             if (outputFile.is_open())
@@ -117,7 +124,9 @@ void CFGProcessor::parseInputFile(const string& inputFilename)
         outputFile << "Parsing completed with " << totalErrors << " error(s).\n";
 }
 
-// Parsing String
+/* -----------------------------------------------------------------
+   ───────  parseString (unchanged from last version)  ───────
+------------------------------------------------------------------*/
 bool CFGProcessor::parseString(const string& input, int lineNumber)
 {
     stack<string> st;  st.push("$");  st.push(grammar.startSymbol);
@@ -164,7 +173,12 @@ bool CFGProcessor::parseString(const string& input, int lineNumber)
     return !hadErr;
 }
 
-// Tokeniser
+/*  getNextToken & main() unchanged – see previous file  */
+
+
+/* -----------------------------------------------------------------
+   ──────────────  Tokeniser (unchanged)  ──────────────
+------------------------------------------------------------------*/
 
 string CFGProcessor::getNextToken(const string& input, int& position)
 {
@@ -218,6 +232,9 @@ string CFGProcessor::getNextToken(const string& input, int& position)
     return one;
 }
 
+/* -----------------------------------------------------------------
+   ──────────────  Main  ──────────────
+------------------------------------------------------------------*/
 
 int main(int argc, char* argv[])
 {
@@ -228,8 +245,8 @@ int main(int argc, char* argv[])
     }
 
     CFGProcessor proc(argv[1], argv[3]);
-    proc.displayResults();           
-    proc.parseInputFile(argv[2]);   
+    proc.displayResults();           // grammar → FIRST/FOLLOW/table
+    proc.parseInputFile(argv[2]);    // now parse the supplied strings
 
     cout << "\nProcessing complete.  Results written to " << argv[3] << '\n';
     if (proc.outputFile.is_open())

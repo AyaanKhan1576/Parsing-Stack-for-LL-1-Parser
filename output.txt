@@ -477,23 +477,22 @@ Apply production: EXPR_TAIL -> epsilon
 Stack: [ $ STMT_LIST } STMT_LIST { ) ]
 Input: } $
 Syntax Error (Line 5): Mismatch. Expected ')', but found ';'
-Error Recovery: Popping ')' from stack.
+Error Recovery: Popping ')' from stack and skipping input token ';'.
+Next token after skip: }
 Stack: [ $ STMT_LIST } STMT_LIST { ]
-Input: } $
-Syntax Error (Line 5): Mismatch. Expected '{', but found ';'
-Error Recovery: Popping '{' from stack.
-Stack: [ $ STMT_LIST } STMT_LIST ]
-Input: } $
-Syntax Error (Line 5): No production for [STMT_LIST, ;]
-Error Recovery: Skipping token ';'
+Input: $
+Syntax Error (Line 5): Mismatch. Expected '{', but found '}'
+Error Recovery: Popping '{' from stack and skipping input token '}'.
+Next token after skip: $
 Stack: [ $ STMT_LIST } STMT_LIST ]
 Input: $
 Apply production: STMT_LIST -> epsilon 
 (Applying epsilon)
 Stack: [ $ STMT_LIST } ]
 Input: $
-Match and Pop: }
-Next token: $
+Syntax Error (Line 5): Mismatch. Expected '}', but found '$'
+Error Recovery: Popping '}' from stack and skipping input token '$'.
+Next token after skip: $
 Stack: [ $ STMT_LIST ]
 Input: $
 Apply production: STMT_LIST -> epsilon 

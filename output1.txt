@@ -1,0 +1,583 @@
+Original Grammar:
+Grammar:
+ASSIGN -> id = EXPR ; 
+COND -> EXPR REL_OP EXPR 
+DECL -> int id ; 
+EXPR -> TERM EXPR_TAIL 
+EXPR_TAIL -> + TERM EXPR_TAIL  | - TERM EXPR_TAIL  | epsilon 
+IF_STMT -> if ( COND ) { STMT_LIST } 
+PROGRAM -> STMT_LIST 
+REL_OP -> >  | <  | ==  | !=  | >=  | <= 
+STMT -> DECL  | ASSIGN  | IF_STMT 
+STMT_LIST -> STMT STMT_LIST  | epsilon 
+TERM -> id  | int_lit  | ( EXPR ) 
+
+Grammar after Left Factoring:
+Grammar:
+ASSIGN -> id = EXPR ; 
+COND -> EXPR REL_OP EXPR 
+DECL -> int id ; 
+EXPR -> TERM EXPR_TAIL 
+EXPR_TAIL -> + TERM EXPR_TAIL  | - TERM EXPR_TAIL  | epsilon 
+IF_STMT -> if ( COND ) { STMT_LIST } 
+PROGRAM -> STMT_LIST 
+REL_OP -> >  | <  | ==  | !=  | >=  | <= 
+STMT -> DECL  | ASSIGN  | IF_STMT 
+STMT_LIST -> STMT STMT_LIST  | epsilon 
+TERM -> id  | int_lit  | ( EXPR ) 
+
+Grammar after Left Recursion Elimination:
+Grammar:
+ASSIGN -> id = EXPR ; 
+COND -> EXPR REL_OP EXPR 
+DECL -> int id ; 
+EXPR -> TERM EXPR_TAIL 
+EXPR_TAIL -> + TERM EXPR_TAIL  | - TERM EXPR_TAIL  | epsilon 
+IF_STMT -> if ( COND ) { STMT_LIST } 
+PROGRAM -> STMT_LIST 
+REL_OP -> >  | <  | ==  | !=  | >=  | <= 
+STMT -> int id ;  | id = EXPR ;  | if ( COND ) { STMT_LIST } 
+STMT_LIST -> int id ; STMT_LIST  | id = EXPR ; STMT_LIST  | if ( COND ) { STMT_LIST } STMT_LIST  | epsilon 
+TERM -> id  | int_lit  | ( EXPR ) 
+
+FIRST Sets:
+FIRST(ASSIGN) = { id }
+FIRST(COND) = { (, id, int_lit }
+FIRST(DECL) = { int }
+FIRST(EXPR) = { (, id, int_lit }
+FIRST(EXPR_TAIL) = { +, -, epsilon }
+FIRST(IF_STMT) = { if }
+FIRST(PROGRAM) = { epsilon, id, if, int }
+FIRST(REL_OP) = { !=, <, <=, ==, >, >= }
+FIRST(STMT) = { id, if, int }
+FIRST(STMT_LIST) = { epsilon, id, if, int }
+FIRST(TERM) = { (, id, int_lit }
+
+FOLLOW Sets:
+FOLLOW(ASSIGN) = {  }
+FOLLOW(COND) = { ) }
+FOLLOW(DECL) = {  }
+FOLLOW(EXPR) = { !=, ), ;, <, <=, ==, >, >= }
+FOLLOW(EXPR_TAIL) = { !=, ), ;, <, <=, ==, >, >= }
+FOLLOW(IF_STMT) = {  }
+FOLLOW(PROGRAM) = { $ }
+FOLLOW(REL_OP) = { (, id, int_lit }
+FOLLOW(STMT) = {  }
+FOLLOW(STMT_LIST) = { $, } }
+FOLLOW(TERM) = { !=, ), +, -, ;, <, <=, ==, >, >= }
+
+LL(1) Parsing Table:
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| NonTerm    | !=         | $          | (          | )          | +          | -          | ;          | <          | <=         | =          | ==         | >          | >=         | id         | if         | int        | int_lit    | {          | }          |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| ASSIGN     |            |            |            |            |            |            |            |            |            |            |            |            |            | id = ...   |            |            |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| COND       |            |            | EXPR ...   |            |            |            |            |            |            |            |            |            |            | EXPR ...   |            |            | EXPR ...   |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| DECL       |            |            |            |            |            |            |            |            |            |            |            |            |            |            |            | int id ;   |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| EXPR       |            |            | TERM ...   |            |            |            |            |            |            |            |            |            |            | TERM ...   |            |            | TERM ...   |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| EXPR_TAIL  | epsilon    |            |            | epsilon    | + TER...   | - TER...   | epsilon    | epsilon    | epsilon    |            | epsilon    | epsilon    | epsilon    |            |            |            |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| IF_STMT    |            |            |            |            |            |            |            |            |            |            |            |            |            |            | if ( ...   |            |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| PROGRAM    |            | STMT_...   |            |            |            |            |            |            |            |            |            |            |            | STMT_...   | STMT_...   | STMT_...   |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| REL_OP     | !=         |            |            |            |            |            |            | <          | <=         |            | ==         | >          | >=         |            |            |            |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| STMT       |            |            |            |            |            |            |            |            |            |            |            |            |            | id = ...   | if ( ...   | int id ;   |            |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| STMT_LIST  |            | epsilon    |            |            |            |            |            |            |            |            |            |            |            | id = ...   | if ( ...   | int i...   |            |            | epsilon    |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+| TERM       |            |            | ( EXPR )   |            |            |            |            |            |            |            |            |            |            | id         |            |            | int_lit    |            |            |
++------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+------------+
+
+===== PARSING INPUT STRINGS =====
+
+Line 1: int x ;
+Beginning parse of input string
+Stack: [ $ PROGRAM ]
+Input:  x ;
+Current token: int
+Action: Pop PROGRAM from stack
+Apply production: PROGRAM -> STMT_LIST 
+Stack: [ $ STMT_LIST ]
+Input:  x ;
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> int id ; STMT_LIST 
+Stack: [ $ STMT_LIST ; id int ]
+Input:  x ;
+Action: Pop int from stack
+Match: int
+Current token: id
+Stack: [ $ STMT_LIST ; id ]
+Input:  ;
+Action: Pop id from stack
+Match: id
+Current token: ;
+Stack: [ $ STMT_LIST ; ]
+Input: $
+Action: Pop ; from stack
+Match: ;
+Current token: $
+Stack: [ $ STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ ]
+Input: $
+Action: Pop $ from stack
+Parse successful!
+-----------------------------
+
+Line 2: x = 5 + 2 + ;
+Beginning parse of input string
+Stack: [ $ PROGRAM ]
+Input:  = 5 + 2 + ;
+Current token: id
+Action: Pop PROGRAM from stack
+Apply production: PROGRAM -> STMT_LIST 
+Stack: [ $ STMT_LIST ]
+Input:  = 5 + 2 + ;
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> id = EXPR ; STMT_LIST 
+Stack: [ $ STMT_LIST ; EXPR = id ]
+Input:  = 5 + 2 + ;
+Action: Pop id from stack
+Match: id
+Current token: =
+Stack: [ $ STMT_LIST ; EXPR = ]
+Input:  5 + 2 + ;
+Action: Pop = from stack
+Match: =
+Current token: int_lit
+Stack: [ $ STMT_LIST ; EXPR ]
+Input:  + 2 + ;
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM ]
+Input:  + 2 + ;
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST ; EXPR_TAIL int_lit ]
+Input:  + 2 + ;
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: +
+Stack: [ $ STMT_LIST ; EXPR_TAIL ]
+Input:  2 + ;
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> + TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM + ]
+Input:  2 + ;
+Action: Pop + from stack
+Match: +
+Current token: int_lit
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM ]
+Input:  + ;
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST ; EXPR_TAIL int_lit ]
+Input:  + ;
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: +
+Stack: [ $ STMT_LIST ; EXPR_TAIL ]
+Input:  ;
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> + TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM + ]
+Input:  ;
+Action: Pop + from stack
+Match: +
+Current token: ;
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM ]
+Input: $
+Action: Pop TERM from stack
+Syntax Error: No production for [TERM, ;]
+Line 2: Syntax Error: Unexpected token ';', no production rule found
+Error recovery: Trying to synchronize using FOLLOW set
+Stack: [ $ STMT_LIST ; EXPR_TAIL ]
+Input: $
+Action: Pop EXPR_TAIL from stack
+Syntax Error: No production for [EXPR_TAIL, $]
+Line 2: Syntax Error: Unexpected token '$', no production rule found
+Error recovery: Trying to synchronize using FOLLOW set
+Stack: [ $ STMT_LIST ; ]
+Input: $
+Action: Pop ; from stack
+Syntax Error: Expected ';', but found '$'
+Line 2: Syntax Error: Unexpected token '$'
+Error recovery: Skipping token and continuing
+Stack: [ $ STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ ]
+Input: $
+Action: Pop $ from stack
+Parse successful!
+-----------------------------
+
+Line 3: x = 5 + ;
+Beginning parse of input string
+Stack: [ $ PROGRAM ]
+Input:  = 5 + ;
+Current token: id
+Action: Pop PROGRAM from stack
+Apply production: PROGRAM -> STMT_LIST 
+Stack: [ $ STMT_LIST ]
+Input:  = 5 + ;
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> id = EXPR ; STMT_LIST 
+Stack: [ $ STMT_LIST ; EXPR = id ]
+Input:  = 5 + ;
+Action: Pop id from stack
+Match: id
+Current token: =
+Stack: [ $ STMT_LIST ; EXPR = ]
+Input:  5 + ;
+Action: Pop = from stack
+Match: =
+Current token: int_lit
+Stack: [ $ STMT_LIST ; EXPR ]
+Input:  + ;
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM ]
+Input:  + ;
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST ; EXPR_TAIL int_lit ]
+Input:  + ;
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: +
+Stack: [ $ STMT_LIST ; EXPR_TAIL ]
+Input:  ;
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> + TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM + ]
+Input:  ;
+Action: Pop + from stack
+Match: +
+Current token: ;
+Stack: [ $ STMT_LIST ; EXPR_TAIL TERM ]
+Input: $
+Action: Pop TERM from stack
+Syntax Error: No production for [TERM, ;]
+Line 3: Syntax Error: Unexpected token ';', no production rule found
+Error recovery: Trying to synchronize using FOLLOW set
+Stack: [ $ STMT_LIST ; EXPR_TAIL ]
+Input: $
+Action: Pop EXPR_TAIL from stack
+Syntax Error: No production for [EXPR_TAIL, $]
+Line 3: Syntax Error: Unexpected token '$', no production rule found
+Error recovery: Trying to synchronize using FOLLOW set
+Stack: [ $ STMT_LIST ; ]
+Input: $
+Action: Pop ; from stack
+Syntax Error: Expected ';', but found '$'
+Line 3: Syntax Error: Unexpected token '$'
+Error recovery: Skipping token and continuing
+Stack: [ $ STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ ]
+Input: $
+Action: Pop $ from stack
+Parse successful!
+-----------------------------
+
+Line 4: if ( x > 0 ) { x = x - 1 ; }
+Beginning parse of input string
+Stack: [ $ PROGRAM ]
+Input:  ( x > 0 ) { x = x - 1 ; }
+Current token: if
+Action: Pop PROGRAM from stack
+Apply production: PROGRAM -> STMT_LIST 
+Stack: [ $ STMT_LIST ]
+Input:  ( x > 0 ) { x = x - 1 ; }
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> if ( COND ) { STMT_LIST } STMT_LIST 
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ( if ]
+Input:  ( x > 0 ) { x = x - 1 ; }
+Action: Pop if from stack
+Match: if
+Current token: (
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ( ]
+Input:  x > 0 ) { x = x - 1 ; }
+Action: Pop ( from stack
+Match: (
+Current token: id
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ]
+Input:  > 0 ) { x = x - 1 ; }
+Action: Pop COND from stack
+Apply production: COND -> EXPR REL_OP EXPR 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR ]
+Input:  > 0 ) { x = x - 1 ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL TERM ]
+Input:  > 0 ) { x = x - 1 ; }
+Action: Pop TERM from stack
+Apply production: TERM -> id 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL id ]
+Input:  > 0 ) { x = x - 1 ; }
+Action: Pop id from stack
+Match: id
+Current token: >
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL ]
+Input:  0 ) { x = x - 1 ; }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> epsilon 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP ]
+Input:  0 ) { x = x - 1 ; }
+Action: Pop REL_OP from stack
+Apply production: REL_OP -> > 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR > ]
+Input:  0 ) { x = x - 1 ; }
+Action: Pop > from stack
+Match: >
+Current token: int_lit
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR ]
+Input:  ) { x = x - 1 ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL TERM ]
+Input:  ) { x = x - 1 ; }
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL int_lit ]
+Input:  ) { x = x - 1 ; }
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: )
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL ]
+Input:  { x = x - 1 ; }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> epsilon 
+Stack: [ $ STMT_LIST } STMT_LIST { ) ]
+Input:  { x = x - 1 ; }
+Action: Pop ) from stack
+Match: )
+Current token: {
+Stack: [ $ STMT_LIST } STMT_LIST { ]
+Input:  x = x - 1 ; }
+Action: Pop { from stack
+Match: {
+Current token: id
+Stack: [ $ STMT_LIST } STMT_LIST ]
+Input:  = x - 1 ; }
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> id = EXPR ; STMT_LIST 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR = id ]
+Input:  = x - 1 ; }
+Action: Pop id from stack
+Match: id
+Current token: =
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR = ]
+Input:  x - 1 ; }
+Action: Pop = from stack
+Match: =
+Current token: id
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR ]
+Input:  - 1 ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL TERM ]
+Input:  - 1 ; }
+Action: Pop TERM from stack
+Apply production: TERM -> id 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL id ]
+Input:  - 1 ; }
+Action: Pop id from stack
+Match: id
+Current token: -
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL ]
+Input:  1 ; }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> - TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL TERM - ]
+Input:  1 ; }
+Action: Pop - from stack
+Match: -
+Current token: int_lit
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL TERM ]
+Input:  ; }
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL int_lit ]
+Input:  ; }
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: ;
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL ]
+Input:  }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> epsilon 
+Stack: [ $ STMT_LIST } STMT_LIST ; ]
+Input:  }
+Action: Pop ; from stack
+Match: ;
+Current token: }
+Stack: [ $ STMT_LIST } STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ STMT_LIST } ]
+Input: $
+Action: Pop } from stack
+Match: }
+Current token: $
+Stack: [ $ STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ ]
+Input: $
+Action: Pop $ from stack
+Parse successful!
+-----------------------------
+
+Line 5: if ( x > 0 { x = x - 1 ; }
+Beginning parse of input string
+Stack: [ $ PROGRAM ]
+Input:  ( x > 0 { x = x - 1 ; }
+Current token: if
+Action: Pop PROGRAM from stack
+Apply production: PROGRAM -> STMT_LIST 
+Stack: [ $ STMT_LIST ]
+Input:  ( x > 0 { x = x - 1 ; }
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> if ( COND ) { STMT_LIST } STMT_LIST 
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ( if ]
+Input:  ( x > 0 { x = x - 1 ; }
+Action: Pop if from stack
+Match: if
+Current token: (
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ( ]
+Input:  x > 0 { x = x - 1 ; }
+Action: Pop ( from stack
+Match: (
+Current token: id
+Stack: [ $ STMT_LIST } STMT_LIST { ) COND ]
+Input:  > 0 { x = x - 1 ; }
+Action: Pop COND from stack
+Apply production: COND -> EXPR REL_OP EXPR 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR ]
+Input:  > 0 { x = x - 1 ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL TERM ]
+Input:  > 0 { x = x - 1 ; }
+Action: Pop TERM from stack
+Apply production: TERM -> id 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL id ]
+Input:  > 0 { x = x - 1 ; }
+Action: Pop id from stack
+Match: id
+Current token: >
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP EXPR_TAIL ]
+Input:  0 { x = x - 1 ; }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> epsilon 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR REL_OP ]
+Input:  0 { x = x - 1 ; }
+Action: Pop REL_OP from stack
+Apply production: REL_OP -> > 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR > ]
+Input:  0 { x = x - 1 ; }
+Action: Pop > from stack
+Match: >
+Current token: int_lit
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR ]
+Input:  { x = x - 1 ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL TERM ]
+Input:  { x = x - 1 ; }
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL int_lit ]
+Input:  { x = x - 1 ; }
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: {
+Stack: [ $ STMT_LIST } STMT_LIST { ) EXPR_TAIL ]
+Input:  x = x - 1 ; }
+Action: Pop EXPR_TAIL from stack
+Syntax Error: No production for [EXPR_TAIL, {]
+Line 5: Syntax Error: Unexpected token '{', no production rule found
+Error recovery: Trying to synchronize using FOLLOW set
+Stack: [ $ STMT_LIST } STMT_LIST { ) ]
+Input:  = x - 1 ; }
+Action: Pop ) from stack
+Syntax Error: Expected ')', but found 'id'
+Line 5: Syntax Error: Unexpected token 'id'
+Error recovery: Skipping token and continuing
+Stack: [ $ STMT_LIST } STMT_LIST { ]
+Input:  x - 1 ; }
+Action: Pop { from stack
+Syntax Error: Expected '{', but found '='
+Line 5: Syntax Error: Unexpected token '='
+Error recovery: Skipping token and continuing
+Stack: [ $ STMT_LIST } STMT_LIST ]
+Input:  - 1 ; }
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> id = EXPR ; STMT_LIST 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR = id ]
+Input:  - 1 ; }
+Action: Pop id from stack
+Match: id
+Current token: -
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR = ]
+Input:  1 ; }
+Action: Pop = from stack
+Syntax Error: Expected '=', but found '-'
+Line 5: Syntax Error: Unexpected token '-'
+Error recovery: Skipping token and continuing
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR ]
+Input:  ; }
+Action: Pop EXPR from stack
+Apply production: EXPR -> TERM EXPR_TAIL 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL TERM ]
+Input:  ; }
+Action: Pop TERM from stack
+Apply production: TERM -> int_lit 
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL int_lit ]
+Input:  ; }
+Action: Pop int_lit from stack
+Match: int_lit
+Current token: ;
+Stack: [ $ STMT_LIST } STMT_LIST ; EXPR_TAIL ]
+Input:  }
+Action: Pop EXPR_TAIL from stack
+Apply production: EXPR_TAIL -> epsilon 
+Stack: [ $ STMT_LIST } STMT_LIST ; ]
+Input:  }
+Action: Pop ; from stack
+Match: ;
+Current token: }
+Stack: [ $ STMT_LIST } STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ STMT_LIST } ]
+Input: $
+Action: Pop } from stack
+Match: }
+Current token: $
+Stack: [ $ STMT_LIST ]
+Input: $
+Action: Pop STMT_LIST from stack
+Apply production: STMT_LIST -> epsilon 
+Stack: [ $ ]
+Input: $
+Action: Pop $ from stack
+Parse successful!
+-----------------------------
+
+Parsing completed with 0 error(s).

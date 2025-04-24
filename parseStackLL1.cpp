@@ -255,13 +255,17 @@ bool CFGProcessor::parseString(const string& input, int lineNumber) {
             if (outputFile.is_open()) outputFile << "Syntax Error (Line " << lineNumber << "): Mismatch. Expected '" << topStack << "', but found '" << currentToken << "'" << endl;
             error = true;
 
-            // Error Recovery Strategy 1: Panic Mode - Pop from stack
-            cout << "Error Recovery: Popping '" << topStack << "' from stack." << endl;
-             if (outputFile.is_open()) outputFile << "Error Recovery: Popping '" << topStack << "' from stack." << endl;
-            parseStack.pop();
-            errorRecoveryCounter++;
+            // Error Recovery Strategy: Pop expected symbol AND Skip erroneous input token
+            cout << "Error Recovery: Popping '" << topStack << "' from stack and skipping input token '" << currentToken << "'." << endl;
+            if (outputFile.is_open()) outputFile << "Error Recovery: Popping '" << topStack << "' from stack and skipping input token '" << currentToken << "'." << endl;
 
-            // Optional: Add Strategy 2: Skip input token until one matches stack top or follow set element
+            parseStack.pop(); // Pop the expected terminal from stack
+            // Add this line to advance past the erroneous token:
+            currentToken = getNextToken(input, position);
+            cout << "Next token after skip: " << currentToken << endl; // Optional: Log the new token
+             if (outputFile.is_open()) outputFile << "Next token after skip: " << currentToken << endl; // Optional
+
+            errorRecoveryCounter++;
         }
         // If the top of stack is a non-terminal
         else if (isNonTerminal(topStack)) {
